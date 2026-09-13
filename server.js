@@ -11,7 +11,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mega Upload Helper Function
 async function uploadSessionToMega(sessionPath, phoneNumber) {
     try {
         const storage = new Storage({
@@ -26,7 +25,6 @@ async function uploadSessionToMega(sessionPath, phoneNumber) {
             });
         });
 
-        // Create a folder for sessions if it doesn't exist
         let folder = storage.root.children.find(f => f.name === 'SACHIYA_MD_SESSIONS' && f.directory);
         if (!folder) {
             folder = await new Promise((resolve, reject) => {
@@ -37,11 +35,9 @@ async function uploadSessionToMega(sessionPath, phoneNumber) {
             });
         }
 
-        // Zip or upload creds.json directly
         const credsPath = path.join(sessionPath, 'creds.json');
         if (fs.existsSync(credsPath)) {
             const fileData = fs.readFileSync(credsPath);
-            // Check if file already exists in folder, delete old one
             const existingFile = folder.children.find(f => f.name === `${phoneNumber}.json`);
             if (existingFile) {
                 await new Promise((res) => existingFile.delete(res));
@@ -53,10 +49,10 @@ async function uploadSessionToMega(sessionPath, phoneNumber) {
                     else resolve(file);
                 });
             });
-            console.log(`Session for ${phoneNumber} successfully uploaded to Mega!`);
+            console.log(`Session for ${phoneNumber} uploaded to Mega successfully!`);
         }
     } catch (e) {
-        console.error('Error uploading session to Mega:', e);
+        console.error('Mega upload error:', e);
     }
 }
 
@@ -83,15 +79,13 @@ app.get('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: pino({ level: 'fatal' }),
-            browser: Browsers.ubuntu('Chrome') // Ubuntu / Chrome device link configuration
+            browser: Browsers.ubuntu('Chrome')
         });
 
         if (!Sock.authState.creds.registered) {
-            await delay(1500);
-            phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+            await delay(2000);
             let code = await Sock.requestPairingCode(phoneNumber);
             code = code?.match(/.{1,4}/g)?.join("-") || code;
-            
             res.json({ code });
         } else {
             res.json({ error: 'Number is already registered!' });
@@ -102,13 +96,9 @@ app.get('/pair', async (req, res) => {
         Sock.ev.on('connection.update', async (update) => {
             const { connection } = update;
             if (connection === 'open') {
-                console.log(`WhatsApp Connected Successfully for ${phoneNumber}`);
-                await delay(5000); // Wait for full sync
-                
-                // Upload session to Mega
+                console.log(`WhatsApp Connected: ${phoneNumber}`);
+                await delay(5000);
                 await uploadSessionToMega(sessionDir, phoneNumber);
-                
-                // Cleanup local temp session files
                 rimraf.sync(sessionDir);
             }
         });
@@ -117,11 +107,11 @@ app.get('/pair', async (req, res) => {
         console.error(err);
         rimraf.sync(sessionDir);
         if (!res.headersSent) {
-            res.json({ error: 'Service Unavailable or Invalid Number.' });
+            res.json({ error: 'Failed to generate code. Try again.' });
         }
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
