@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = "mongodb+srv://prxcaptain_db_user:XAIml399UD1X4073@cluster0.tgn2pgm.mongodb.net/?appName=Cluster0";
+const MONGO_URI = "mongodb+srv://prxcaptain_db_user:sachi2010@cluster0.tgn2pgm.mongodb.net/?appName=Cluster0";
 
 let isConnected = false;
 
