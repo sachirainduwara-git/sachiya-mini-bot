@@ -1,0 +1,19 @@
+{
+  "name": "sachiya-md-pair",
+  "version": "1.0.0",
+  "description": "Pair site for SACHIYA MD WhatsApp Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "express": "^4.19.2",
+    "megajs": "^1.1.0",
+    "pino": "^9.0.0",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
