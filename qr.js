@@ -1,4 +1,3 @@
-
 import express from "express";
 import fs from "fs";
 import pino from "pino";
@@ -12,7 +11,7 @@ import {
     fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import QRCode from "qrcode";
-import { upload } from "./mega.js";
+import { saveSessionToMongo } from "./database.js";
 
 const router = express.Router();
 
@@ -25,18 +24,8 @@ function removeFile(FilePath) {
     }
 }
 
-function getMegaFileId(url) {
-    try {
-        const match = url.match(/\/file\/([^#]+#[^\/]+)/);
-        return match ? match[1] : null;
-    } catch (error) {
-        return null;
-    }
-}
-
 router.get("/", async (req, res) => {
-    const sessionId =
-        Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    const sessionId = "qr_" + Date.now().toString() + Math.random().toString(36).substr(2, 9);
     const dirs = `./qr_sessions/session_${sessionId}`;
 
     if (!fs.existsSync("./qr_sessions")) {
@@ -49,8 +38,7 @@ router.get("/", async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
         try {
-            const { version, isLatest } = await fetchLatestBaileysVersion();
-
+            const { version } = await fetchLatestBaileysVersion();
             let responseSent = false;
 
             const KnightBot = makeWASocket({
@@ -75,13 +63,10 @@ router.get("/", async (req, res) => {
             });
 
             KnightBot.ev.on("connection.update", async (update) => {
-                const { connection, lastDisconnect, isNewLogin, isOnline, qr } =
-                    update;
+                const { connection, lastDisconnect, isNewLogin, isOnline, qr } = update;
 
                 if (qr && !responseSent) {
-                    console.log(
-                        "🟢 QR Code Generated! Scan it with your WhatsApp app.",
-                    );
+                    console.log("🟢 QR Code Generated! Scan it with your WhatsApp app.");
 
                     try {
                         const qrDataURL = await QRCode.toDataURL(qr, {
@@ -89,19 +74,14 @@ router.get("/", async (req, res) => {
                             type: "image/png",
                             quality: 0.92,
                             margin: 1,
-                            color: {
-                                dark: "#000000",
-                                light: "#FFFFFF",
-                            },
+                            color: { dark: "#000000", light: "#FFFFFF" },
                         });
 
                         if (!responseSent) {
                             responseSent = true;
-                            console.log("QR Code sent to client");
                             res.send({
                                 qr: qrDataURL,
-                                message:
-                                    "QR Code Generated! Scan it with your WhatsApp app.",
+                                message: "QR Code Generated! Scan it with your WhatsApp app.",
                                 instructions: [
                                     "1. Open WhatsApp on your phone",
                                     "2. Go to Settings > Linked Devices",
@@ -114,83 +94,45 @@ router.get("/", async (req, res) => {
                         console.error("Error generating QR code:", qrError);
                         if (!responseSent) {
                             responseSent = true;
-                            res.status(500).send({
-                                code: "Failed to generate QR code",
-                            });
+                            res.status(500).send({ code: "Failed to generate QR code" });
                         }
                     }
                 }
 
                 if (connection === "open") {
                     console.log("✅ Connected successfully!");
-                    console.log("📱 Uploading session to MEGA...");
+                    console.log("📱 Saving session to MongoDB...");
 
                     try {
                         const credsPath = dirs + "/creds.json";
-                        const megaUrl = await upload(
-                            credsPath,
-                            `creds_qr_${sessionId}.json`,
-                        );
-                        const megaFileId = getMegaFileId(megaUrl);
+                        await saveSessionToMongo(sessionId, credsPath);
 
-                        if (megaFileId) {
-                            console.log(
-                                "✅ Session uploaded to MEGA. File ID:",
-                                megaFileId,
-                            );
-
-                            const userJid = jidNormalizedUser(
-                                KnightBot.authState.creds.me?.id || "",
-                            );
-                            if (userJid) {
-                                await KnightBot.sendMessage(userJid, {
-                                    text: `${megaFileId}`,
-                                });
-                                console.log(
-                                    "📄 MEGA file ID sent successfully",
-                                );
-                            } else {
-                                console.log("❌ Could not determine user JID");
-                            }
-                        } else {
-                            console.log("❌ Failed to upload to MEGA");
+                        const userJid = jidNormalizedUser(KnightBot.authState.creds.me?.id || "");
+                        if (userJid) {
+                            await KnightBot.sendMessage(userJid, {
+                                text: "Connecting Sachiya Md",
+                            });
+                            console.log("📄 Success message sent to inbox");
                         }
 
                         console.log("🧹 Cleaning up session...");
                         await delay(1000);
                         removeFile(dirs);
-                        console.log("✅ Session cleaned up successfully");
                         console.log("🎉 Process completed successfully!");
 
-                        console.log("🛑 Shutting down application...");
                         await delay(2000);
                         process.exit(0);
                     } catch (error) {
-                        console.error("❌ Error uploading to MEGA:", error);
+                        console.error("❌ Error saving session to MongoDB:", error);
                         removeFile(dirs);
                         await delay(2000);
                         process.exit(1);
                     }
                 }
 
-                if (isNewLogin) {
-                    console.log("🔐 New login via QR code");
-                }
-
-                if (isOnline) {
-                    console.log("📶 Client is online");
-                }
-
                 if (connection === "close") {
-                    const statusCode =
-                        lastDisconnect?.error?.output?.statusCode;
-
-                    if (statusCode === 401) {
-                        console.log(
-                            "❌ Logged out from WhatsApp. Need to generate new QR code.",
-                        );
-                    } else {
-                        console.log("🔁 Connection closed — restarting...");
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    if (statusCode !== 401) {
                         initiateSession();
                     }
                 }
@@ -219,25 +161,4 @@ router.get("/", async (req, res) => {
     await initiateSession();
 });
 
-process.on("uncaughtException", (err) => {
-    let e = String(err);
-    if (e.includes("conflict")) return;
-    if (e.includes("not-authorized")) return;
-    if (e.includes("Socket connection timeout")) return;
-    if (e.includes("rate-overlimit")) return;
-    if (e.includes("Connection Closed")) return;
-    if (e.includes("Timed Out")) return;
-    if (e.includes("Value not found")) return;
-    if (
-        e.includes("Stream Errored") ||
-        e.includes("Stream Errored (restart required)")
-    )
-        return;
-    if (e.includes("statusCode: 515") || e.includes("statusCode: 503")) return;
-    console.log("Caught exception: ", err);
-    process.exit(1);
-});
-
 export default router;
-
-  
