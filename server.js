@@ -5,6 +5,12 @@ const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
+const crypto = require('crypto'); // Fix for crypto is not defined error
+
+// Ensure global crypto is available for Baileys
+if (!global.crypto) {
+    global.crypto = crypto;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,7 +58,7 @@ async function uploadSessionToMega(sessionPath, phoneNumber) {
             console.log(`Session for ${phoneNumber} uploaded to Mega successfully!`);
         }
     } catch (e) {
-        console.error('Mega upload error details:', e);
+        console.error('Mega upload error:', e);
     }
 }
 
@@ -63,11 +69,15 @@ app.get('/pair', async (req, res) => {
     }
 
     phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-    const sessionDir = path.join(__dirname, `session_${phoneNumber}`);
-
-    if (!fs.existsSync(sessionDir)) {
-        fs.mkdirSync(sessionDir, { recursive: true });
+    if (phoneNumber.length < 10) {
+        return res.json({ error: 'Invalid phone number length!' });
     }
+
+    const sessionDir = path.join(__dirname, `session_${phoneNumber}`);
+    if (fs.existsSync(sessionDir)) {
+        rimraf.sync(sessionDir);
+    }
+    fs.mkdirSync(sessionDir, { recursive: true });
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
@@ -104,7 +114,7 @@ app.get('/pair', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Pairing error details:', err);
+        console.error('Pairing error:', err);
         rimraf.sync(sessionDir);
         if (!res.headersSent) {
             res.json({ error: err.message || 'Failed to generate code. Try again.' });
