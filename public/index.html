@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SACHIYA MD - Pair Code</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: #0f172a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        /* Background Animations & Glow */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            top: -100px;
+            left: -100px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: float 8s ease-in-out infinite alternate;
+        }
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #7928ca, #ff0080);
+            bottom: -100px;
+            right: -100px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: float 8s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.1); }
+        }
+        .container {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #00ff87, #60efff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        p.subtitle {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus {
+            border-color: #00ff87;
+            box-shadow: 0 0 15px rgba(0, 255, 135, 0.3);
+        }
+        .input-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 255, 135, 0.4);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 135, 0.6);
+        }
+        #result {
+            margin-top: 25px;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .code-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px dashed #00ff87;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #00ff87;
+            cursor: pointer;
+            margin-bottom: 10px;
+            user-select: all;
+            transition: background 0.3s;
+        }
+        .code-box:hover {
+            background: rgba(0, 255, 135, 0.1);
+        }
+        .copy-hint {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .loader {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #00ff87;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SACHIYA MD</h1>
+        <p class="subtitle">Connect your WhatsApp to experience the ultimate multi-device bot power!</p>
+        
+        <div class="input-group">
+            <i class="fas fa-phone"></i>
+            <input type="text" id="phone" placeholder="Enter number with country code (e.g., 94777777777)">
+        </div>
+        
+        <button class="btn" id="submitBtn" onclick="getCode()">Get Pair Code</button>
+        
+        <div class="loader" id="loader"></div>
+
+        <div id="result">
+            <div class="code-box" id="pairCodeDisplay" onclick="copyCode()">---</div>
+            <p class="copy-hint"><i class="fas fa-copy"></i> Click the code above to copy instantly!</p>
+        </div>
+    </div>
+
+    <script>
+        async function getCode() {
+            const phone = document.getElementById('phone').value.trim();
+            const loader = document.getElementById('loader');
+            const result = document.getElementById('result');
+            const submitBtn = document.getElementById('submitBtn');
+            const pairCodeDisplay = document.getElementById('pairCodeDisplay');
+
+            if (!phone) {
+                alert('Please enter your WhatsApp phone number!');
+                return;
+            }
+
+            loader.style.display = 'block';
+            result.style.display = 'none';
+            submitBtn.style.display = 'none';
+
+            try {
+                const response = await fetch(`/pair?phone=${encodeURIComponent(phone)}`);
+                const data = await response.json();
+
+                loader.style.display = 'none';
+                submitBtn.style.display = 'block';
+
+                if (data.code) {
+                    pairCodeDisplay.innerText = data.code;
+                    result.style.display = 'block';
+                } else {
+                    alert(data.error || 'Failed to generate pair code. Try again!');
+                }
+            } catch (err) {
+                loader.style.display = 'none';
+                submitBtn.style.display = 'block';
+                alert('An error occurred. Check your connection or number format.');
+            }
+        }
+
+        function copyCode() {
+            const codeText = document.getElementById('pairCodeDisplay').innerText;
+            navigator.clipboard.writeText(codeText);
+            alert('Pair code copied to clipboard! Open WhatsApp -> Linked Devices -> Link with phone number instead.');
+        }
+    </script>
+</body>
+</html>
