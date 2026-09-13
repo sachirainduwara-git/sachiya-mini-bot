@@ -178,7 +178,7 @@
         
         <div class="input-group">
             <i class="fas fa-phone"></i>
-            <input type="text" id="phone" placeholder="Enter number with country code (e.g., 94777777777)">
+            <input type="tel" id="phone" placeholder="Enter number (e.g., 94777XXXXXX)">
         </div>
         
         <button class="btn" id="submitBtn" onclick="getCode()">Get Pair Code</button>
@@ -193,14 +193,16 @@
 
     <script>
         async function getCode() {
-            const phone = document.getElementById('phone').value.trim();
+            let phone = document.getElementById('phone').value.trim();
+            phone = phone.replace(/[^0-9]/g, ''); // Numbers withtrai ganna symbols/letters ain karanawa
+
             const loader = document.getElementById('loader');
             const result = document.getElementById('result');
             const submitBtn = document.getElementById('submitBtn');
             const pairCodeDisplay = document.getElementById('pairCodeDisplay');
 
-            if (!phone) {
-                alert('Please enter your WhatsApp phone number!');
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid WhatsApp phone number with country code!');
                 return;
             }
 
