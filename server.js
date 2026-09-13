@@ -52,7 +52,7 @@ async function uploadSessionToMega(sessionPath, phoneNumber) {
             console.log(`Session for ${phoneNumber} uploaded to Mega successfully!`);
         }
     } catch (e) {
-        console.error('Mega upload error:', e);
+        console.error('Mega upload error details:', e);
     }
 }
 
@@ -83,7 +83,7 @@ app.get('/pair', async (req, res) => {
         });
 
         if (!Sock.authState.creds.registered) {
-            await delay(2000);
+            await delay(3000);
             let code = await Sock.requestPairingCode(phoneNumber);
             code = code?.match(/.{1,4}/g)?.join("-") || code;
             res.json({ code });
@@ -104,10 +104,10 @@ app.get('/pair', async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error('Pairing error details:', err);
         rimraf.sync(sessionDir);
         if (!res.headersSent) {
-            res.json({ error: 'Failed to generate code. Try again.' });
+            res.json({ error: err.message || 'Failed to generate code. Try again.' });
         }
     }
 });
